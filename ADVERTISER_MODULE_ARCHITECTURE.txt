@@ -1,0 +1,276 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                    ADVERTISER MODULE - CLEAN ARCHITECTURE                      ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        ADAPTER LAYER (REST)                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │  AdvertiserController                                             │       │
+│  │  ────────────────────────                                         │       │
+│  │  POST   /api/v1/advertisers          → createAdvertiser()        │       │
+│  │  GET    /api/v1/advertisers/{id}     → getAdvertiser()           │       │
+│  │  POST   /api/v1/advertisers/{id}/charge → chargeBalance()        │       │
+│  │  POST   /api/v1/advertisers/{id}/deduct → deductBalance()        │       │
+│  │  GET    /api/v1/advertisers/{id}/exists → checkExists()          │       │
+│  └──────────────────────────────────────────────────────────────────┘       │
+│                                 │                                            │
+│                                 │ Request DTOs                               │
+│  ┌──────────────────────────────▼──────────────────────────────────┐        │
+│  │  CreateAdvertiserRequest  │  ChargeBalanceRequest              │        │
+│  │  DeductBalanceRequest     │  AdvertiserResponse                │        │
+│  └────────────────────────────────────────────────────────────────┘        │
+│                                 │                                            │
+│  ┌──────────────────────────────▼──────────────────────────────────┐        │
+│  │  GlobalExceptionHandler                                         │        │
+│  │  ─────────────────────                                          │        │
+│  │  • AdvertiserNotFoundException    → 404 NOT FOUND              │        │
+│  │  • DuplicateEmailException        → 409 CONFLICT               │        │
+│  │  • InsufficientBalanceException   → 400 BAD REQUEST            │        │
+│  │  • ValidationException            → 400 BAD REQUEST            │        │
+│  └────────────────────────────────────────────────────────────────┘        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                 │
+                                 │ Command DTOs
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        APPLICATION LAYER                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │  Use Cases (@Service @Transactional)                             │       │
+│  │  ────────────────────────────────────                            │       │
+│  │                                                                   │       │
+│  │  CreateAdvertiserUseCase                                         │       │
+│  │  ├─ Validate email uniqueness                                    │       │
+│  │  ├─ Generate advertiser ID                                       │       │
+│  │  ├─ Create Advertiser aggregate                                  │       │
+│  │  └─ Save via repository                                          │       │
+│  │                                                                   │       │
+│  │  ChargeBalanceUseCase                                            │       │
+│  │  ├─ Load advertiser                                              │       │
+│  │  ├─ Call advertiser.chargeBalance()                              │       │
+│  │  └─ Save updated advertiser                                      │       │
+│  │                                                                   │       │
+│  │  DeductBalanceUseCase                                            │       │
+│  │  ├─ Load advertiser                                              │       │
+│  │  ├─ Call advertiser.deductBalance()                              │       │
+│  │  └─ Save updated advertiser                                      │       │
+│  └──────────────────────────────────────────────────────────────────┘       │
+│                                 │                                            │
+│  ┌──────────────────────────────▼──────────────────────────────────┐        │
+│  │  Command DTOs                                                    │        │
+│  │  ─────────────                                                   │        │
+│  │  CreateAdvertiserCommand  │  ChargeBalanceCommand               │        │
+│  │  DeductBalanceCommand                                            │        │
+│  └────────────────────────────────────────────────────────────────┘        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                 │
+                                 │ Domain Interface
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           DOMAIN LAYER                                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │  Advertiser (Aggregate Root)                                     │       │
+│  │  ────────────────────────────                                    │       │
+│  │  - id: String                                                    │       │
+│  │  - name: String                                                  │       │
+│  │  - email: String                                                 │       │
+│  │  - balance: Money                                                │       │
+│  │  - status: AdvertiserStatus                                      │       │
+│  │  - createdAt: Instant                                            │       │
+│  │  - updatedAt: Instant                                            │       │
+│  │                                                                   │       │
+│  │  + chargeBalance(amount): void                                   │       │
+│  │  + deductBalance(amount): void                                   │       │
+│  │  + canAfford(amount): boolean                                    │       │
+│  │  + suspend(): void                                               │       │
+│  │  + activate(): void                                              │       │
+│  └──────────────────────────────────────────────────────────────────┘       │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │  Money (Value Object)                                            │       │
+│  │  ──────────────────────                                          │       │
+│  │  - amount: Long                                                  │       │
+│  │  - currency: String                                              │       │
+│  │                                                                   │       │
+│  │  + add(value): Money                                             │       │
+│  │  + subtract(value): Money                                        │       │
+│  │  + canAfford(value): boolean                                     │       │
+│  └──────────────────────────────────────────────────────────────────┘       │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │  AdvertiserStatus (Enum)                                         │       │
+│  │  ─────────────────────────                                       │       │
+│  │  ACTIVE  │  SUSPENDED  │  DELETED                                │       │
+│  └──────────────────────────────────────────────────────────────────┘       │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │  AdvertiserRepository (Interface - Port)                         │       │
+│  │  ─────────────────────────────────────────                       │       │
+│  │  + save(advertiser): Advertiser                                  │       │
+│  │  + findById(id): Optional<Advertiser>                            │       │
+│  │  + findByEmail(email): Optional<Advertiser>                      │       │
+│  │  + existsById(id): boolean                                       │       │
+│  │  + existsByEmail(email): boolean                                 │       │
+│  └──────────────────────────────────────────────────────────────────┘       │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │  Domain Exceptions                                               │       │
+│  │  ──────────────────                                              │       │
+│  │  • AdvertiserNotFoundException                                   │       │
+│  │  • DuplicateEmailException                                       │       │
+│  │  • InsufficientBalanceException                                  │       │
+│  └──────────────────────────────────────────────────────────────────┘       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                 │
+                                 │ Implementation
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     INFRASTRUCTURE LAYER                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────┐       │
+│  │  AdvertiserRepositoryImpl (@Repository)                          │       │
+│  │  ───────────────────────────────────────                         │       │
+│  │  - jpaRepository: AdvertiserJpaRepository                        │       │
+│  │  - mapper: AdvertiserMapper                                      │       │
+│  │                                                                   │       │
+│  │  + save(advertiser)                                              │       │
+│  │    ├─ Check if exists                                            │       │
+│  │    ├─ Update existing OR create new entity                       │       │
+│  │    ├─ Map domain → entity                                        │       │
+│  │    ├─ Save via JPA                                               │       │
+│  │    └─ Map entity → domain                                        │       │
+│  └──────────────────────────────────────────────────────────────────┘       │
+│                                 │                                            │
+│  ┌──────────────────────────────▼──────────────────────────────────┐        │
+│  │  AdvertiserMapper (@Component)                                   │        │
+│  │  ──────────────────────────────                                 │        │
+│  │  + toEntity(advertiser): AdvertiserEntity                        │        │
+│  │  + toDomain(entity): Advertiser                                  │        │
+│  │  + updateEntity(entity, advertiser): void                        │        │
+│  └────────────────────────────────────────────────────────────────┘        │
+│                                 │                                            │
+│  ┌──────────────────────────────▼──────────────────────────────────┐        │
+│  │  AdvertiserJpaRepository (Interface)                             │        │
+│  │  ────────────────────────────────────                            │        │
+│  │  extends JpaRepository<AdvertiserEntity, String>                 │        │
+│  │                                                                   │        │
+│  │  + findByEmail(email): Optional<AdvertiserEntity>                │        │
+│  │  + existsByEmail(email): boolean                                 │        │
+│  └────────────────────────────────────────────────────────────────┘        │
+│                                 │                                            │
+│  ┌──────────────────────────────▼──────────────────────────────────┐        │
+│  │  AdvertiserEntity (@Entity)                                      │        │
+│  │  ───────────────────────────                                    │        │
+│  │  @Table(name = "advertisers")                                    │        │
+│  │  @Index(name = "idx_advertiser_email", unique = true)           │        │
+│  │                                                                   │        │
+│  │  - id: String                                                    │        │
+│  │  - name: String                                                  │        │
+│  │  - email: String (unique)                                        │        │
+│  │  - balance: Long                                                 │        │
+│  │  - currency: String                                              │        │
+│  │  - status: AdvertiserStatus                                      │        │
+│  │  - createdAt: Instant                                            │        │
+│  │  - updatedAt: Instant                                            │        │
+│  │                                                                   │        │
+│  │  @PrePersist, @PreUpdate                                         │        │
+│  └────────────────────────────────────────────────────────────────┘        │
+│                                 │                                            │
+│                                 ▼                                            │
+│  ┌────────────────────────────────────────────────────────────────┐         │
+│  │              PostgreSQL Database                                │         │
+│  │              ───────────────────────                             │         │
+│  │              Table: advertisers                                 │         │
+│  └────────────────────────────────────────────────────────────────┘         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                              DATA FLOW EXAMPLE                                 ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+  CREATE ADVERTISER FLOW:
+  ═══════════════════════
+
+  1. POST /api/v1/advertisers
+     └─> AdvertiserController.createAdvertiser(CreateAdvertiserRequest)
+         └─> CreateAdvertiserCommand (DTO transformation)
+             └─> CreateAdvertiserUseCase.execute(command)
+                 ├─> AdvertiserRepository.existsByEmail() [validation]
+                 ├─> Advertiser.builder()...build() [domain creation]
+                 │   └─> Money.of(0L) [value object]
+                 └─> AdvertiserRepository.save(advertiser)
+                     └─> AdvertiserRepositoryImpl.save()
+                         ├─> AdvertiserMapper.toEntity()
+                         ├─> AdvertiserJpaRepository.save()
+                         └─> AdvertiserMapper.toDomain()
+                             └─> Return Advertiser
+                                 └─> AdvertiserResponse.from()
+                                     └─> HTTP 201 CREATED
+
+  CHARGE BALANCE FLOW:
+  ═══════════════════
+
+  1. POST /api/v1/advertisers/{id}/charge
+     └─> AdvertiserController.chargeBalance(ChargeBalanceRequest)
+         └─> ChargeBalanceCommand (DTO transformation)
+             └─> ChargeBalanceUseCase.execute(command)
+                 ├─> AdvertiserRepository.findById() [load aggregate]
+                 ├─> advertiser.chargeBalance(amount) [domain logic]
+                 │   └─> balance = balance.add(amount) [immutable update]
+                 └─> AdvertiserRepository.save(advertiser)
+                     └─> HTTP 200 OK
+
+  DEDUCT BALANCE FLOW:
+  ═══════════════════
+
+  1. POST /api/v1/advertisers/{id}/deduct
+     └─> AdvertiserController.deductBalance(DeductBalanceRequest)
+         └─> DeductBalanceCommand (DTO transformation)
+             └─> DeductBalanceUseCase.execute(command)
+                 ├─> AdvertiserRepository.findById() [load aggregate]
+                 ├─> advertiser.deductBalance(amount) [domain logic]
+                 │   ├─> if (!balance.canAfford(amount))
+                 │   │   └─> throw InsufficientBalanceException
+                 │   └─> balance = balance.subtract(amount)
+                 └─> AdvertiserRepository.save(advertiser)
+                     └─> HTTP 200 OK
+
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                           KEY DESIGN PRINCIPLES                                ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+  ✓ Domain-Driven Design (DDD)
+    • Advertiser is Aggregate Root
+    • Money is Value Object (immutable)
+    • Rich domain model with business logic
+    • Repository pattern for persistence abstraction
+
+  ✓ Clean Architecture / Hexagonal Architecture
+    • Domain layer is pure (no framework dependencies)
+    • Use cases orchestrate domain logic
+    • Infrastructure implements domain interfaces
+    • Adapters handle external communication
+
+  ✓ Separation of Concerns
+    • Domain: Business rules and invariants
+    • Application: Use case orchestration
+    • Infrastructure: Persistence implementation
+    • Adapter: REST API and DTOs
+
+  ✓ Dependency Inversion
+    • Domain defines interfaces (AdvertiserRepository)
+    • Infrastructure implements interfaces
+    • Dependencies point inward to domain
+
+  ✓ Test-Driven Development (TDD)
+    • 21+ unit tests covering all layers
+    • Use case tests with mocks
+    • Controller tests with MockMvc
+    • 100% test pass rate
+

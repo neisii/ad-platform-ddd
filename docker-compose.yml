@@ -19,6 +19,26 @@ services:
       timeout: 5s
       retries: 5
 
+  advertiser-service:
+    build:
+      context: .
+      dockerfile: ./advertiser-module/Dockerfile
+    container_name: advertiser-service
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ad_platform
+      SPRING_DATASOURCE_USERNAME: adplatform
+      SPRING_DATASOURCE_PASSWORD: adplatform123
+      SERVER_PORT: 8080
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ad-platform-network
+    restart: unless-stopped
+
   campaign-service:
     build:
       context: .
@@ -29,12 +49,61 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ad_platform
       SPRING_DATASOURCE_USERNAME: adplatform
       SPRING_DATASOURCE_PASSWORD: adplatform123
+      ADVERTISER_SERVICE_URL: http://advertiser-service:8080
       SERVER_PORT: 8080
     ports:
       - "8082:8080"
     depends_on:
       postgres:
         condition: service_healthy
+      advertiser-service:
+        condition: service_started
+    networks:
+      - ad-platform-network
+    restart: unless-stopped
+
+  targeting-service:
+    build:
+      context: .
+      dockerfile: ./targeting-module/Dockerfile
+    container_name: targeting-service
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ad_platform
+      SPRING_DATASOURCE_USERNAME: adplatform
+      SPRING_DATASOURCE_PASSWORD: adplatform123
+      SERVER_PORT: 8080
+    ports:
+      - "8083:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ad-platform-network
+    restart: unless-stopped
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: ./inventory-module/Dockerfile
+    container_name: inventory-service
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ad_platform
+      SPRING_DATASOURCE_USERNAME: adplatform
+      SPRING_DATASOURCE_PASSWORD: adplatform123
+      CAMPAIGN_SERVICE_URL: http://campaign-service:8080
+      TARGETING_SERVICE_URL: http://targeting-service:8080
+      SERVER_PORT: 8080
+    ports:
+      - "8084:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      campaign-service:
+        condition: service_started
+      targeting-service:
+        condition: service_started
     networks:
       - ad-platform-network
     restart: unless-stopped

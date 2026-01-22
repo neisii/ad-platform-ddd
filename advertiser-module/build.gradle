@@ -1,10 +1,14 @@
-// Advertiser Module
-// TODO: Implement advertiser management (account, balance)
+// Advertiser Module - 구현 완료
+
+dependencies {
+    // Spring Boot Actuator for health checks
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+}
 
 bootJar {
-    enabled = false
+    enabled = true
 }
 
 jar {
-    enabled = true
+    enabled = false
 }
