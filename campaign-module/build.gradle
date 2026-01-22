@@ -1,0 +1,14 @@
+// Campaign Module - 구현 완료
+
+dependencies {
+    // Spring Boot Actuator for health checks
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+}
+
+bootJar {
+    enabled = true
+}
+
+jar {
+    enabled = false
+}

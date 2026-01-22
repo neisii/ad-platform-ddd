@@ -1,0 +1,10 @@
+rootProject.name = 'ad-platform-ddd'
+
+include 'campaign-module'
+include 'advertiser-module'
+include 'targeting-module'
+include 'inventory-module'
+include 'eventlog-module'
+include 'metrics-module'
+include 'billing-module'
+include 'api-gateway'

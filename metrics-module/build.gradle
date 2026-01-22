@@ -1,0 +1,10 @@
+// Metrics Module
+// TODO: Implement metrics aggregation (daily metrics, CTR, CVR, CPA)
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}

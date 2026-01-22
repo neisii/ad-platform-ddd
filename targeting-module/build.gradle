@@ -1,0 +1,10 @@
+// Targeting Module
+// TODO: Implement targeting rules (demographics, geo, device)
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}

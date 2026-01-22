@@ -1,0 +1,10 @@
+// Billing Module
+// TODO: Implement billing (charge, balance deduction)
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}

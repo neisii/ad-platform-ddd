@@ -1,0 +1,10 @@
+// EventLog Module
+// TODO: Implement event logging (impression, click, conversion)
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}

@@ -1,0 +1,10 @@
+// Advertiser Module
+// TODO: Implement advertiser management (account, balance)
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}

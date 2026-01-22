@@ -1,0 +1,43 @@
+# 테스트 환경용 docker-compose
+# 특정 모듈만 테스트하고 싶을 때 사용
+
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: ad-platform-db-test
+    environment:
+      POSTGRES_DB: ad_platform_test
+      POSTGRES_USER: adplatform
+      POSTGRES_PASSWORD: adplatform123
+    ports:
+      - "5433:5432"
+    networks:
+      - ad-platform-test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adplatform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  campaign-service-test:
+    build:
+      context: .
+      dockerfile: ./campaign-module/Dockerfile
+    container_name: campaign-service-test
+    environment:
+      SPRING_PROFILES_ACTIVE: test
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-test:5432/ad_platform_test
+      SPRING_DATASOURCE_USERNAME: adplatform
+      SPRING_DATASOURCE_PASSWORD: adplatform123
+      SERVER_PORT: 8080
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - ad-platform-test-network
+
+networks:
+  ad-platform-test-network:
+    driver: bridge

@@ -1,0 +1,10 @@
+// API Gateway Module
+// TODO: Implement GraphQL gateway for unified queries
+
+bootJar {
+    enabled = false
+}
+
+jar {
+    enabled = true
+}
