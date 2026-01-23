@@ -1,10 +1,10 @@
 // EventLog Module
-// TODO: Implement event logging (impression, click, conversion)
+// Event logging service for impressions, clicks, and conversions
 
 bootJar {
-    enabled = false
+    enabled = true
 }
 
 jar {
-    enabled = true
+    enabled = false
 }

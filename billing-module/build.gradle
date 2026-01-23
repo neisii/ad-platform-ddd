@@ -1,10 +1,17 @@
-// Billing Module
-// TODO: Implement billing (charge, balance deduction)
+// Billing Module - 과금 처리
+
+dependencies {
+    // Spring Boot Actuator for health checks
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Scheduling
+    implementation 'org.springframework:spring-context'
+}
 
 bootJar {
-    enabled = false
+    enabled = true
 }
 
 jar {
-    enabled = true
+    enabled = false
 }

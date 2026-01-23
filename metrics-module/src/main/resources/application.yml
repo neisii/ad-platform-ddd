@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: metrics-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ad_platform}
+    username: ${SPRING_DATASOURCE_USERNAME:adplatform}
+    password: ${SPRING_DATASOURCE_PASSWORD:adplatform123}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+server:
+  port: ${SERVER_PORT:8086}
+
+logging:
+  level:
+    com.adplatform: DEBUG
+    org.hibernate.SQL: DEBUG
+
+# 외부 서비스 URL
+services:
+  eventlog:
+    url: ${EVENTLOG_SERVICE_URL:http://localhost:8084}
+  campaign:
+    url: ${CAMPAIGN_SERVICE_URL:http://localhost:8082}
+
+---
+# Test Profile
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect

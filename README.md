@@ -52,7 +52,21 @@ Google Ads 스타일의 온라인 광고 송출 서비스 프로토타입입니�
 - CPC/CPM/CPA 가격 모델
 - **테스트**: 39 cases, 100% pass
 
-**총 테스트**: 152+ cases, 100% pass rate ✅
+### 5. EventLog Module (Port 8085) ⭐ NEW
+- 이벤트 기록 (Append-only)
+- IMPRESSION/CLICK/CONVERSION 추적
+- 멱등성 보장 (eventId)
+- Impression Token 추적
+- **테스트**: 51 cases, 100% pass
+
+### 6. Metrics Module (Port 8086) ⭐ NEW
+- 일자별 성과 집계
+- CTR/CVR/CPA/CPC/CPM 계산
+- 스케줄링 집계 (매시간/매일)
+- EventLog + Campaign 통합
+- **테스트**: 32 cases, 100% pass
+
+**총 테스트**: 235+ cases, 100% pass rate ✅
 
 ## 프로젝트 구조
 
@@ -62,9 +76,9 @@ ad-platform-ddd/
 ├── campaign-module/          # 캠페인 관리 (✅ 구현 완료)
 ├── targeting-module/         # 타겟팅 (✅ 구현 완료)
 ├── inventory-module/         # 광고 선택 (✅ 구현 완료)
-├── eventlog-module/          # 이벤트 로그 (TODO)
-├── metrics-module/           # 성과 집계 (TODO)
-├── billing-module/           # 과금 처리 (TODO)
+├── eventlog-module/          # 이벤트 로그 (✅ 구현 완료)
+├── metrics-module/           # 성과 집계 (✅ 구현 완료)
+├── billing-module/           # 과금 처리 (🔧 구조 완성)
 └── api-gateway/              # GraphQL Gateway (TODO)
 ```
 
@@ -73,7 +87,7 @@ ad-platform-ddd/
 ### 1. 전체 시스템 기동
 
 ```bash
-# 모든 서비스 기동 (PostgreSQL + 4개 서비스)
+# 모든 서비스 기동 (PostgreSQL + 6개 서비스)
 docker-compose up -d
 
 # 서비스 상태 확인
@@ -215,6 +229,18 @@ curl -X POST http://localhost:8084/api/v1/inventory/select-ad \
 - `PUT /api/v1/inventory/placements/{id}` - 지면 수정
 - `POST /api/v1/inventory/select-ad` - 광고 선택 ⭐
 
+### EventLog Service (8085)
+- `POST /api/v1/events` - 이벤트 기록 (멱등성 보장)
+- `GET /api/v1/events/{id}` - 이벤트 조회
+- `GET /api/v1/events/ad/{adId}` - 광고별 이벤트 조회
+- `GET /api/v1/events/search` - 시간 범위 조회
+
+### Metrics Service (8086)
+- `POST /api/v1/metrics/aggregate` - 수동 집계 실행
+- `GET /api/v1/metrics/campaign/{id}` - 캠페인 성과 조회
+- `GET /api/v1/metrics/ad/{id}` - 광고 성과 조회
+- `GET /api/v1/metrics/date-range` - 기간별 조회
+
 ## 핵심 비즈니스 로직
 
 ### 광고 선택 알고리즘 (Inventory)
@@ -342,17 +368,19 @@ docker-compose up -d --build
 | Campaign | ✅ 완료 | 47 cases | 8082 |
 | Targeting | ✅ 완료 | 45 cases | 8083 |
 | Inventory | ✅ 완료 | 39 cases | 8084 |
-| EventLog | 🔜 예정 | - | 8085 |
-| Metrics | 🔜 예정 | - | 8086 |
-| Billing | 🔜 예정 | - | 8087 |
+| EventLog | ✅ 완료 | 51 cases | 8085 |
+| Metrics | ✅ 완료 | 32 cases | 8086 |
+| Billing | 🔧 구조 | - | 8087 |
 | API Gateway | 🔜 예정 | - | 8080 |
+
+**전체 현황**: 6/8 모듈 완전 구현, 235+ 테스트 통과 ✅
 
 ## 다음 구현 단계
 
-1. **EventLog Module** - 이벤트 기록 (Impression/Click/Conversion)
-2. **Metrics Module** - 성과 집계 (CTR/CVR/CPA)
-3. **Billing Module** - 비용 차감 및 과금
-4. **GraphQL Gateway** - 통합 조회 API
+1. **Billing Module 완성** - Transaction 처리, 스케줄링 완성
+2. **GraphQL Gateway** - 통합 조회 API
+3. **Kafka 통합** - 이벤트 스트리밍 (선택)
+4. **Kubernetes 배포** - 오케스트레이션 (선택)
 
 ## 문의 및 기여
 
@@ -365,6 +393,7 @@ docker-compose up -d --build
 
 ---
 
-**마지막 업데이트**: 2026-01-22  
-**구현 완료**: 4/8 모듈 (Advertiser, Campaign, Targeting, Inventory)  
-**테스트 통과**: 152+ cases, 100% ✅
+**마지막 업데이트**: 2026-01-23  
+**구현 완료**: 6/8 모듈 (Advertiser, Campaign, Targeting, Inventory, EventLog, Metrics)  
+**테스트 통과**: 235+ cases, 100% ✅  
+**프로덕션 준비**: ✅ 완료 (Billing 제외)

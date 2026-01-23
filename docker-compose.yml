@@ -108,6 +108,52 @@ services:
       - ad-platform-network
     restart: unless-stopped
 
+  eventlog-service:
+    build:
+      context: .
+      dockerfile: ./eventlog-module/Dockerfile
+    container_name: eventlog-service
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ad_platform
+      SPRING_DATASOURCE_USERNAME: adplatform
+      SPRING_DATASOURCE_PASSWORD: adplatform123
+      SERVER_PORT: 8080
+    ports:
+      - "8085:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ad-platform-network
+    restart: unless-stopped
+
+  metrics-service:
+    build:
+      context: .
+      dockerfile: ./metrics-module/Dockerfile
+    container_name: metrics-service
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/ad_platform
+      SPRING_DATASOURCE_USERNAME: adplatform
+      SPRING_DATASOURCE_PASSWORD: adplatform123
+      EVENTLOG_SERVICE_URL: http://eventlog-service:8080
+      CAMPAIGN_SERVICE_URL: http://campaign-service:8080
+      SERVER_PORT: 8080
+    ports:
+      - "8086:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eventlog-service:
+        condition: service_started
+      campaign-service:
+        condition: service_started
+    networks:
+      - ad-platform-network
+    restart: unless-stopped
+
 volumes:
   postgres-data:
 
